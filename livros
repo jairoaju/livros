@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca JavaScript Desktop SPA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --header-bg: rgba(255, 255, 255, 0.85);
+            --input-bg: #f1f5f9;
+            --modal-bg: #ffffff;
+        }
+
+        .dark {
+            --bg-main: #070a12;
+            --bg-card: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+            --header-bg: rgba(7, 10, 18, 0.85);
+            --input-bg: #1e293b;
+            --modal-bg: #0f172a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dynamic-bg {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        .dynamic-header {
+            background-color: var(--header-bg);
+            border-color: var(--border-color);
+        }
+
+        .dynamic-text {
+            color: var(--text-main);
+        }
+
+        .dynamic-muted {
+            color: var(--text-muted);
+        }
+
+        .dynamic-input {
+            background-color: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .dynamic-modal {
+            background-color: var(--modal-bg);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+
+        .book-card {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .book-card:hover {
+            transform: translateY(-6px);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col antialiased selection:bg-amber-500 selection:text-white">
+
+    <header class="dynamic-header backdrop-blur-md border-b sticky top-0 z-30 transition-colors">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetFilters()">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-white shadow-lg shadow-amber-500/25 flex-shrink-0">
+                    <i class="fa-brands fa-js text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold tracking-tight text-lg dynamic-text leading-tight">JS Books SPA</h1>
+                    <p class="text-xs dynamic-muted leading-tight font-medium">Acervo Desktop & Especialistas</p>
+                </div>
+            </div>
+            
+            <!-- Persistent Desktop Search Bar -->
+            <div class="flex-1 max-w-xl relative">
+                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-search text-sm"></i>
+                </span>
+                <input type="text" id="searchInput" placeholder="Buscar por título, autor, tópico ou conceito em JavaScript..." class="dynamic-input w-full pl-11 pr-10 py-3 text-sm rounded-2xl border focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm transition-all">
+                <button id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-amber-500 hidden cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Header Action Controls & External Link -->
+            <div class="flex items-center space-x-3">
+                <a href="javascript:void(0)" onclick="openFullScreenView()" class="hidden lg:flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-lg shadow-amber-500/20 transition-all cursor-pointer" title="Abrir em Tela Cheia">
+                    <i class="fa-solid fa-up-right-from-square"></i>
+                    <span>Abrir Tela Cheia</span>
+                </a>
+                <button id="themeToggle" class="w-11 h-11 rounded-2xl bg-slate-200/70 dark:bg-slate-800/80 hover:bg-slate-300 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-amber-400 transition-colors shadow-sm cursor-pointer" aria-label="Alternar tema">
+                    <i id="themeIcon" class="fa-solid fa-moon text-base"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-6 py-8 flex flex-col">
+        
+        <!-- Hero Banner Desktop -->
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 rounded-3xl text-white p-10 mb-8 shadow-2xl relative overflow-hidden flex items-center justify-between border border-slate-800">
+            <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+                <i class="fa-brands fa-js text-[320px]"></i>
+            </div>
+            <div class="z-10 max-w-2xl">
+                <span class="inline-block py-1.5 px-3.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold tracking-wider uppercase mb-3 border border-amber-500/30">
+                    Edição Especializada Desktop
+                </span>
+                <h2 class="text-3xl lg:text-4xl font-black tracking-tight mb-3">Explore a Literatura JavaScript</h2>
+                <p class="text-slate-300 text-sm lg:text-base leading-relaxed">
+                    Descubra os livros mais renomados sobre o ecossistema JS. Clique em qualquer capa para visualizar resumos detalhados, especificações técnicas e fichas dos autores.
+                </p>
+                <div class="mt-5 lg:hidden">
+                    <button onclick="openFullScreenView()" class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-500 text-white text-xs font-semibold shadow-md">
+                        <i class="fa-solid fa-up-right-from-square"></i>
+                        <span>Abrir Visualização Ampliada</span>
+                    </button>
+                </div>
+            </div>
+            <div class="z-10 hidden md:flex gap-4">
+                <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-center min-w-[120px]">
+                    <span id="totalBooksCount" class="block text-3xl font-extrabold text-amber-400">0</span>
+                    <span class="text-xs text-slate-300 font-medium">Obras Listadas</span>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-center min-w-[120px]">
+                    <span class="block text-3xl font-extrabold text-emerald-400">100%</span>
+                    <span class="text-xs text-slate-300 font-medium">Interativo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Filter Bar -->
+        <div class="flex items-center justify-between pb-6 mb-6 border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center space-x-3 overflow-x-auto">
+                <button class="category-btn px-5 py-2.5 rounded-2xl text-sm font-semibold bg-amber-500 text-white shadow-lg shadow-amber-500/25 transition-all cursor-pointer flex items-center" data-category="all">
+                    <i class="fa-solid fa-th-large mr-2"></i> Todos os Livros
+                </button>
+                <button class="category-btn px-5 py-2.5 rounded-2xl text-sm font-medium dynamic-bg border dynamic-muted hover:opacity-80 transition-all cursor-pointer flex items-center" data-category="Iniciante">
+                    <i class="fa-solid fa-seedling mr-2 text-emerald-500"></i> Iniciante
+                </button>
+                <button class="category-btn px-5 py-2.5 rounded-2xl text-sm font-medium dynamic-bg border dynamic-muted hover:opacity-80 transition-all cursor-pointer flex items-center" data-category="Avançado">
+                    <i class="fa-solid fa-microchip mr-2 text-amber-500"></i> Avançado
+                </button>
+                <button class="category-btn px-5 py-2.5 rounded-2xl text-sm font-medium dynamic-bg border dynamic-muted hover:opacity-80 transition-all cursor-pointer flex items-center" data-category="Frameworks">
+                    <i class="fa-solid fa-cubes mr-2 text-indigo-500"></i> Frameworks & Dom
+                </button>
+            </div>
+            <div id="resultsCountText" class="text-xs dynamic-muted font-medium hidden md:block">
+                Mostrando <span id="visibleCount" class="font-bold dynamic-text">0</span> obras
+            </div>
+        </div>
+
+        <!-- Books Desktop Grid -->
+        <div id="booksGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Dynamically populated books -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+            <div class="w-20 h-20 rounded-3xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-3xl mb-4 shadow-inner">
+                <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <h3 class="text-lg font-bold dynamic-text">Nenhum livro encontrado</h3>
+            <p class="text-sm dynamic-muted mt-1 max-w-md">Não encontramos nenhuma obra correspondente à sua busca. Tente pesquisar por outro autor, título ou categoria.</p>
+            <button onclick="resetFilters()" class="mt-5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-all shadow-md cursor-pointer">
+                Limpar Filtros
+            </button>
+        </div>
+
+    </main>
+
+    <div id="bookModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/75 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div id="modalContent" class="dynamic-modal rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden transform scale-95 transition-all duration-300 flex flex-col border border-slate-200 dark:border-slate-800">
+            
+            <!-- Modal Header -->
+            <div class="px-8 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between dynamic-bg">
+                <span id="modalCategory" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 uppercase tracking-wider">Categoria</span>
+                <button id="closeModalBtn" class="w-10 h-10 rounded-2xl bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 dynamic-text flex items-center justify-center transition-colors cursor-pointer" aria-label="Fechar detalhes">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-8 flex flex-col md:flex-row gap-8 items-start">
+                <!-- Book Cover Preview -->
+                <div class="w-full md:w-1/3 flex-shrink-0 flex justify-center">
+                    <div id="modalCoverContainer" class="w-52 h-72 rounded-2xl shadow-2xl overflow-hidden flex flex-col justify-between p-5 text-white relative">
+                        <!-- Dynamic Cover Background -->
+                    </div>
+                </div>
+                
+                <!-- Book Text Details -->
+                <div class="w-full md:w-2/3 flex flex-col justify-between">
+                    <div>
+                        <h3 id="modalTitle" class="text-2xl lg:text-3xl font-extrabold dynamic-text mb-1 leading-snug">Título do Livro</h3>
+                        <p id="modalAuthor" class="text-sm font-semibold dynamic-muted mb-5">por Autor</p>
+                        
+                        <div class="grid grid-cols-3 gap-3 py-3 px-4 rounded-2xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs dynamic-muted mb-6 text-center">
+                            <div>
+                                <span class="block text-[10px] uppercase text-slate-400 font-semibold">Ano</span>
+                                <span id="modalYear" class="font-bold text-sm dynamic-text">2023</span>
+                            </div>
+                            <div class="border-x border-slate-200 dark:border-slate-800">
+                                <span class="block text-[10px] uppercase text-slate-400 font-semibold">Avaliação</span>
+                                <span class="font-bold text-sm text-amber-500"><i class="fa-solid fa-star text-xs mr-1"></i><span id="modalRating">4.8</span></span>
+                            </div>
+                            <div>
+                                <span class="block text-[10px] uppercase text-slate-400 font-semibold">Páginas</span>
+                                <span id="modalPages" class="font-bold text-sm dynamic-text">320</span>
+                            </div>
+                        </div>
+
+                        <h4 class="text-xs font-bold uppercase dynamic-muted tracking-wider mb-2">Sinopse Completa</h4>
+                        <p id="modalDescription" class="dynamic-muted text-sm leading-relaxed">Descrição detalhada da obra...</p>
+                    </div>
+
+                    <div class="mt-8 pt-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <span class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-900/40 flex items-center">
+                            <i class="fa-solid fa-check-circle mr-1.5"></i> Versão Digital Disponível
+                        </span>
+                        <button onclick="closeBookModal()" class="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-lg shadow-amber-500/25 transition-all flex items-center space-x-2 cursor-pointer">
+                            <span>Concluir Leitura</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen / New Tab Simulation Modal -->
+    <div id="fullScreenModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-10 bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="dynamic-modal rounded-3xl shadow-2xl w-full h-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between dynamic-bg">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center">
+                        <i class="fa-brands fa-js text-sm"></i>
+                    </div>
+                    <span class="font-bold text-sm dynamic-text">Visualização SPA Imersiva em Tela Cheia</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openInNewTab()" class="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-semibold dynamic-text transition-colors cursor-pointer flex items-center space-x-1.5">
+                        <i class="fa-solid fa-external-link-alt text-[10px]"></i>
+                        <span>Abrir Nova Aba</span>
+                    </button>
+                    <button onclick="closeFullScreenView()" class="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 dynamic-text flex items-center justify-center transition-colors cursor-pointer">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-grow p-6 overflow-y-auto flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-3xl mb-4">
+                    <i class="fa-solid fa-expand"></i>
+                </div>
+                <h3 class="text-xl font-extrabold dynamic-text mb-2">Modo Tela Cheia Ativo</h3>
+                <p class="text-sm dynamic-muted max-w-md mb-6">Esta interface simula a aplicação SPA em tela cheia com todas as interações e dados carregados em tempo real.</p>
+                <button onclick="closeFullScreenView()" class="px-6 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold shadow-md cursor-pointer">
+                    Retornar à Galeria Principal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="dynamic-header border-t mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between text-xs dynamic-muted">
+            <p>&copy; 2026 Biblioteca JavaScript SPA. Desenvolvido para Desenvolvedores Modernos.</p>
+            <div class="flex space-x-6">
+                <span class="hover:text-amber-500 transition-colors cursor-pointer" onclick="openFullScreenView()">Tela Cheia</span>
+                <span class="hover:text-amber-500 transition-colors cursor-pointer">Repositório GitHub</span>
+                <span class="hover:text-amber-500 transition-colors cursor-pointer">Termos de Uso</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Database of JavaScript books
+        const booksData = [
+            {
+                id: 1,
+                title: "JavaScript: The Good Parts",
+                author: "Douglas Crockford",
+                category: "Avançado",
+                year: 2008,
+                rating: 4.7,
+                pages: 176,
+                colorFrom: "from-amber-600",
+                colorTo: "to-orange-700",
+                icon: "fa-code",
+                description: "Mostra que, apesar dos aspectos complexos e cheios de armadilhas da linguagem, existe um subconjunto elegante e formidável de JavaScript que permite criar aplicações extremamente robustas e limpas. Essencial para compreender as bases da boa arquitetura."
+            },
+            {
+                id: 2,
+                title: "You Don't Know JS: Yet",
+                author: "Kyle Simpson",
+                category: "Avançado",
+                year: 2015,
+                rating: 4.9,
+                pages: 278,
+                colorFrom: "from-yellow-500",
+                colorTo: "to-amber-600",
+                icon: "fa-brain",
+                description: "Uma série aprofundada que explora os mecanismos centrais de JavaScript que a maioria dos desenvolvedores usa superficialmente, incluindo escopo, closures, protótipos, assincronicidade e programação orientada a objetos nativa."
+            },
+            {
+                id: 3,
+                title: "Eloquent JavaScript",
+                author: "Marijn Haverbeke",
+                category: "Iniciante",
+                year: 2018,
+                rating: 4.8,
+                pages: 472,
+                colorFrom: "from-blue-600",
+                colorTo: "to-indigo-800",
+                icon: "fa-graduation-cap",
+                description: "Um guia moderno e prático para programação que aborda desde os fundamentos absolutos da linguagem até estruturas de dados avançadas, manipulação do DOM e programação assíncrona com projetos práticos."
+            },
+            {
+                id: 4,
+                title: "Clean Code JavaScript",
+                author: "Ryan McDermott",
+                category: "Avançado",
+                year: 2020,
+                rating: 4.9,
+                pages: 310,
+                colorFrom: "from-emerald-600",
+                colorTo: "to-teal-800",
+                icon: "fa-broom",
+                description: "Adapta os princípios clássicos de engenharia de software limpo para o ecossistema JavaScript, fornecendo padrões práticos para nomes significativos, funções puras, tratamento de erros e arquitetura de testes."
+            },
+            {
+                id: 5,
+                title: "JavaScript: The Definitive Guide",
+                author: "David Flanagan",
+                category: "Frameworks",
+                year: 2020,
+                rating: 4.8,
+                pages: 706,
+                colorFrom: "from-violet-600",
+                colorTo: "to-purple-900",
+                icon: "fa-book-bookmark",
+                description: "A bíblia definitiva de referência para programadores JavaScript. Abrange desde a sintaxe central da linguagem até APIs de navegadores modernas, Node.js e ferramentas avançadas do ecossistema web."
+            },
+            {
+                id: 6,
+                title: "Effective JavaScript",
+                author: "David Herman",
+                category: "Avançado",
+                year: 2012,
+                rating: 4.6,
+                pages: 224,
+                colorFrom: "from-rose-600",
+                colorTo: "to-red-800",
+                icon: "fa-bolt",
+                description: "Apresenta 68 maneiras específicas de aproveitar o poder total de JavaScript, ajudando programadores a evitar armadilhas comuns em projetos corporativos e a escrever código mais performático e seguro."
+            },
+            {
+                id: 7,
+                title: "JavaScript Allongé",
+                author: "Reginald Braithwaite",
+                category: "Avançado",
+                year: 2013,
+                rating: 4.5,
+                pages: 350,
+                colorFrom: "from-sky-600",
+                colorTo: "to-blue-700",
+                icon: "fa-feather",
+                description: "Uma imersão profunda em programação funcional usando JavaScript. Explora funções de alta ordem, imutabilidade, closures avançadas e combinadores elegantes para modelagem de software."
+            },
+            {
+                id: 8,
+                title: "Head First JavaScript",
+                author: "Eric Freeman",
+                category: "Iniciante",
+                year: 2014,
+                rating: 4.7,
+                pages: 640,
+                colorFrom: "from-fuchsia-600",
+                colorTo: "to-pink-700",
+                icon: "fa-lightbulb",
+                description: "Uma abordagem altamente visual e interativa para aprender JavaScript do zero, utilizando quebra-cabeças, ilustrações, desafios mentais e exercícios divertidos para fixação rápida dos conceitos."
+            }
+        ];
+
+        // Application State
+        let currentCategory = 'all';
+        let searchQuery = '';
+
+        // DOM Elements
+        const booksGrid = document.getElementById('booksGrid');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const totalBooksCount = document.getElementById('totalBooksCount');
+        const visibleCount = document.getElementById('visibleCount');
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        // Modal Elements
+        const bookModal = document.getElementById('bookModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalCategory = document.getElementById('modalCategory');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalAuthor = document.getElementById('modalAuthor');
+        const modalYear = document.getElementById('modalYear');
+        const modalRating = document.getElementById('modalRating');
+        const modalPages = document.getElementById('modalPages');
+        const modalDescription = document.getElementById('modalDescription');
+        const modalCoverContainer = document.getElementById('modalCoverContainer');
+        const fullScreenModal = document.getElementById('fullScreenModal');
+
+        // Theme Manager
+        function initTheme() {
+            const savedTheme = localStorage.getItem('js_library_desktop_theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+                themeIcon.className = "fa-solid fa-sun text-base";
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.className = "fa-solid fa-moon text-base";
+            }
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('js_library_desktop_theme', 'light');
+                themeIcon.className = "fa-solid fa-moon text-base";
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('js_library_desktop_theme', 'dark');
+                themeIcon.className = "fa-solid fa-sun text-base";
+            }
+        }
+
+        // Initialize Application
+        function initApp() {
+            initTheme();
+            totalBooksCount.textContent = booksData.length;
+            renderBooks();
+            setupEventListeners();
+        }
+
+        // Render Book Cards for Desktop Grid
+        function renderBooks() {
+            const filtered = booksData.filter(book => {
+                const matchesCategory = currentCategory === 'all' || book.category === currentCategory;
+                const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                      book.description.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
+
+            booksGrid.innerHTML = '';
+            visibleCount.textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            emptyState.classList.remove('flex');
+            emptyState.classList.add('hidden');
+
+            filtered.forEach(book => {
+                const card = document.createElement('div');
+                card.className = "book-card dynamic-bg rounded-3xl border shadow-sm hover:shadow-xl overflow-hidden flex flex-col cursor-pointer";
+                card.onclick = () => openBookModal(book.id);
+
+                card.innerHTML = `
+                    <div class="h-52 bg-gradient-to-br ${book.colorFrom} ${book.colorTo} p-6 flex flex-col justify-between text-white relative overflow-hidden">
+                        <div class="absolute -right-6 -bottom-6 opacity-20">
+                            <i class="fa-solid ${book.icon} text-9xl"></i>
+                        </div>
+                        <div class="flex justify-between items-start z-10">
+                            <span class="text-xs font-bold uppercase tracking-wider bg-black/25 backdrop-blur-md px-3 py-1 rounded-full text-white/90">
+                                ${book.category}
+                            </span>
+                            <div class="flex items-center space-x-1.5 bg-black/25 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold">
+                                <i class="fa-solid fa-star text-amber-300 text-xs"></i>
+                                <span>${book.rating}</span>
+                            </div>
+                        </div>
+                        <div class="z-10 mt-auto">
+                            <h3 class="font-bold text-lg leading-snug line-clamp-2">${book.title}</h3>
+                        </div>
+                    </div>
+                    <div class="p-5 flex flex-col justify-between flex-grow">
+                        <div>
+                            <p class="text-[11px] font-bold dynamic-muted uppercase tracking-wider mb-1">Autor</p>
+                            <p class="text-sm font-semibold dynamic-text truncate">${book.author}</p>
+                            <p class="text-xs dynamic-muted mt-2.5 line-clamp-3 leading-relaxed">${book.description}</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 font-bold group">
+                            <span>Ver Detalhes</span>
+                            <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                `;
+                booksGrid.appendChild(card);
+            });
+        }
+
+        // Open Modal
+        function openBookModal(bookId) {
+            const book = booksData.find(b => b.id === bookId);
+            if (!book) return;
+
+            modalCategory.textContent = book.category;
+            modalTitle.textContent = book.title;
+            modalAuthor.textContent = `por ${book.author}`;
+            modalYear.textContent = book.year;
+            modalRating.textContent = book.rating;
+            modalPages.textContent = book.pages;
+            modalDescription.textContent = book.description;
+
+            modalCoverContainer.className = `w-52 h-72 rounded-2xl shadow-2xl overflow-hidden flex flex-col justify-between p-5 text-white relative bg-gradient-to-br ${book.colorFrom} ${book.colorTo}`;
+            modalCoverContainer.innerHTML = `
+                <div class="absolute right-[-20px] bottom-[-20px] opacity-20">
+                    <i class="fa-solid ${book.icon} text-8xl"></i>
+                </div>
+                <div class="z-10">
+                    <span class="text-[10px] uppercase font-bold tracking-widest bg-black/25 px-2.5 py-1 rounded-full">${book.category}</span>
+                </div>
+                <div class="z-10">
+                    <h4 class="font-extrabold text-lg leading-tight line-clamp-2">${book.title}</h4>
+                    <p class="text-xs text-white/80 mt-1">${book.author}</p>
+                </div>
+            `;
+
+            bookModal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close Modal
+        function closeBookModal() {
+            bookModal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Full Screen View Handlers
+        function openFullScreenView() {
+            fullScreenModal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFullScreenView() {
+            fullScreenModal.classList.add('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openInNewTab() {
+            const newWindow = window.open();
+            if (newWindow) {
+                newWindow.document.write(document.documentElement.outerHTML);
+                newWindow.document.close();
+            }
+        }
+
+        // Reset Filters Helper
+        function resetFilters() {
+            currentCategory = 'all';
+            searchQuery = '';
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            categoryBtns.forEach(b => {
+                b.classList.remove('bg-amber-500', 'text-white', 'shadow-lg', 'shadow-amber-500/25');
+                b.classList.add('dynamic-bg', 'border', 'dynamic-muted');
+            });
+            document.querySelector('[data-category="all"]').classList.remove('dynamic-bg', 'border', 'dynamic-muted');
+            document.querySelector('[data-category="all"]').classList.add('bg-amber-500', 'text-white', 'shadow-lg', 'shadow-amber-500/25');
+            renderBooks();
+        }
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            themeToggleBtn.addEventListener('click', toggleTheme);
+
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                if (searchQuery.length > 0) {
+                    clearSearchBtn.classList.remove('hidden');
+                } else {
+                    clearSearchBtn.classList.add('hidden');
+                }
+                renderBooks();
+            });
+
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchQuery = '';
+                clearSearchBtn.classList.add('hidden');
+                renderBooks();
+                searchInput.focus();
+            });
+
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    categoryBtns.forEach(b => {
+                        b.classList.remove('bg-amber-500', 'text-white', 'shadow-lg', 'shadow-amber-500/25');
+                        b.classList.add('dynamic-bg', 'border', 'dynamic-muted');
+                    });
+                    const target = e.currentTarget;
+                    target.classList.remove('dynamic-bg', 'border', 'dynamic-muted');
+                    target.classList.add('bg-amber-500', 'text-white', 'shadow-lg', 'shadow-amber-500/25');
+
+                    currentCategory = target.getAttribute('data-category');
+                    renderBooks();
+                });
+            });
+
+            closeModalBtn.addEventListener('click', closeBookModal);
+            bookModal.addEventListener('click', (e) => {
+                if (e.target === bookModal) closeBookModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeBookModal();
+                    closeFullScreenView();
+                }
+            });
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
